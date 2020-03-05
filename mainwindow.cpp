@@ -23,7 +23,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/videoio/videoio.hpp>
 
-
 using namespace cv;
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -83,6 +82,10 @@ void MainWindow::on_bt_playstop_clicked()
         //convert to grayscale and set the first frame
         cvtColor(frame, firstFrame, COLOR_BGR2GRAY);
         GaussianBlur(firstFrame, firstFrame, Size(21, 21), 0);
+        QDir d = QFileInfo(fileName).absoluteDir();
+        qDebug() << "Saved file path:" << d.absolutePath() + "/output.mp4";
+        VideoWriter writer(d.absolutePath().toStdString() + "/output.mp4", VideoWriter::fourcc('F','M','P','4'), video.get(CAP_PROP_FPS), Size(frame_width,frame_height));
+        writer.write(frame);
 
         while(video.isOpened()) {
             video >> frame;
@@ -115,7 +118,6 @@ void MainWindow::on_bt_playstop_clicked()
                 //draw bound box
                 //rectangle(frame, bound_box, Scalar(0,0,255), 2, 0);
             }
-
 
             if (!boxes.empty() && prev_boxes.empty()){
                 for(int i = 0; i < boxes.size(); i++){
@@ -159,9 +161,9 @@ void MainWindow::on_bt_playstop_clicked()
                     Point(frame_width/6*4, frame_height/8*7), FONT_HERSHEY_DUPLEX, 1, Scalar(200,60,60), 2);
 
             showFrame(&frame, &pixmap, ui->graphicsView);
+            writer.write(frame);
             //imshow("video", frame);
             //waitKey(1000/video.get(CAP_PROP_FPS));
-            //waitKey(1000/80);
             ui->lb_in_num->setText(QString::number(in));
             ui->lb_out_num->setText(QString::number(out));
             qApp->processEvents();
@@ -169,7 +171,7 @@ void MainWindow::on_bt_playstop_clicked()
         qDebug() << "Total number of people:" << people.size();
         qDebug() << "OUT:" << out;
         qDebug() << "IN:" << in;
-
+        writer.release();
     }
     else {
         video.release();
